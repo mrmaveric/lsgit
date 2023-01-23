@@ -16,6 +16,10 @@ fn main() {
         return;
     }
 
+    if current_dir.join(".git").is_dir() {
+        println!("{}", current_dir.display());
+    }
+
     find_git_repositories(current_dir);
 }
 
