@@ -4,21 +4,25 @@ use std::fs;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
+
     let current_dir = if args.len() > 1 {
         std::path::PathBuf::from(&args[1])
     } else {
         current_dir().unwrap()
     };
+
     if !current_dir.is_dir() {
         eprintln!("{} is not a directory", current_dir.to_str().unwrap());
         return;
     }
+
     find_git_repositories(current_dir);
 }
 
 fn find_git_repositories(dir: std::path::PathBuf) {
-    let entries = fs::read_dir(dir);
+    let entries = fs::read_dir(&dir);
     if entries.is_err() {
+        eprintln!("Error reading dir {}", dir.to_str().unwrap());
         return;
     }
     let entries = entries.unwrap();
