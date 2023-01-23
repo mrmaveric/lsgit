@@ -22,7 +22,7 @@ fn main() {
 fn find_git_repositories(dir: std::path::PathBuf) {
     let entries = fs::read_dir(&dir);
     if entries.is_err() {
-        eprintln!("Error reading dir {}", dir.to_str().unwrap());
+        eprintln!("Error reading dir {}: {:?}", dir.to_str().unwrap(), entries);
         return;
     }
     let entries = entries.unwrap();
