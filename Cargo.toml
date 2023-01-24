@@ -1,10 +1,11 @@
 [package]
 name = "lsgit"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "lsgit recursivly lists git projects below start directory. Start directly is CWD by default, but an alternate directory can be passed as a command line arguement"
 keywords = ["lsgit", "git", "ls"]
 license = "MIT"
+homepage = "https://github.com/mrmaveric/lsgit/tree/master"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
