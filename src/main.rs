@@ -1,52 +1,44 @@
 use std::env;
 use std::env::current_dir;
 use std::fs;
+use std::io::Error;
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
+fn main() -> Result<(), std::io::Error> {
+    let args: Vec<String> = env::args().skip(1).collect();
 
-    let current_dir = if args.len() > 1 {
-        std::path::PathBuf::from(&args[1])
+    let base_dir = if args.len() > 0 {
+        std::path::PathBuf::from(&args[0])
     } else {
-        current_dir().unwrap()
+        current_dir()?
     };
 
-    if !current_dir.is_dir() {
-        eprintln!("{} is not a directory", current_dir.to_str().unwrap());
-        return;
+    if !base_dir.is_dir() {
+        eprintln!("{} is not a directory", base_dir.to_str().unwrap());
+        return Ok(());
     }
-
-    if is_git_dir(&current_dir.join(".git")) {
-        println!("{}", current_dir.display());
-    }
-
-    if is_git_dir(&current_dir) && !is_named_git(&current_dir) {
-        println!("{}", current_dir.display());
-    }
-
-    find_git_repositories(current_dir);
+    _ = find_git_repositories(base_dir);
+    Ok(())
 }
 
-fn find_git_repositories(dir: std::path::PathBuf) {
-    let entries = fs::read_dir(&dir);
-    if entries.is_err() {
-        eprintln!("Error reading dir {}: {:?}", dir.to_str().unwrap(), entries);
-        return;
+fn find_git_repositories(dir: std::path::PathBuf) -> Result<(), Error> {
+    if !dir.is_dir() {
+        return Ok(());
     }
-    let entries = entries.unwrap();
+    if is_git_dir(&dir.join(".git")) {
+        println!("{}", dir.display());
+    }
+    if is_git_dir(&dir) && !is_named_git(&dir) {
+        println!("{}", dir.display());
+    }
+
+    let entries = fs::read_dir(&dir)?;
     for entry in entries {
-        let entry = entry.unwrap();
-        let path = entry.path();
+        let path = entry?.path();
         if path.is_dir() {
-            if is_git_dir(&path.join(".git")) {
-                println!("{}", path.display());
-            }
-            if is_git_dir(&path) && !is_named_git(&path) {
-                println!("{}", path.display());
-            }
-            find_git_repositories(path);
+            _ = find_git_repositories(path);
         }
     }
+    Ok(())
 }
 
 fn is_git_dir(path: &std::path::PathBuf) -> bool {
