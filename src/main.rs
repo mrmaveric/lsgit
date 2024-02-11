@@ -1,3 +1,8 @@
+//! lsgit is a command line application that lists git resositories recursivly.
+//! lsgit can be called without any arguements and will start it's search in the current directory.
+//!
+//! If called with a valid path as it's first command line arguement, it will start it's search
+//! in the path provided.
 use std::env;
 use std::env::current_dir;
 use std::error::Error;
@@ -20,11 +25,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Recursive function that prints the current directories path if it is a git repo
+/// then calls it's self on all sub-directories.
 fn find_git_repositories(dir: std::path::PathBuf) -> Result<(), Box<dyn Error>> {
     if !dir.is_dir() {
         return Ok(());
     }
-    if is_git_dir(&dir.join(".git")) || (is_git_dir(&dir) && !is_named_git(&dir)) {
+
+    if (is_git_dir(&dir) || is_git_dir(&dir.join(".git"))) && !is_named_git(&dir) {
         println!("{}", dir.display());
     }
 
@@ -37,6 +45,8 @@ fn find_git_repositories(dir: std::path::PathBuf) -> Result<(), Box<dyn Error>> 
     Ok(())
 }
 
+/// Looks for common files found in the root of a git directory. Returns true if all
+/// files in the list are found
 fn is_git_dir(path: &std::path::PathBuf) -> bool {
     let git_files = ["HEAD", "config", "description", "hooks", "objects", "refs"];
 
@@ -46,9 +56,10 @@ fn is_git_dir(path: &std::path::PathBuf) -> bool {
         .copied()
         .collect::<Vec<&str>>()
         .len()
-        == 6
+        == git_files.len()
 }
 
+/// Checks if the directory provided is named ".git"
 fn is_named_git(path: &std::path::PathBuf) -> bool {
     if let Some(p) = path.file_name() {
         if let Some(ps) = p.to_str() {
