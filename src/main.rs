@@ -1,9 +1,9 @@
 use std::env;
 use std::env::current_dir;
+use std::error::Error;
 use std::fs;
-use std::io::Error;
 
-fn main() -> Result<(), std::io::Error> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().skip(1).collect();
 
     let base_dir = if args.len() > 0 {
@@ -20,19 +20,15 @@ fn main() -> Result<(), std::io::Error> {
     Ok(())
 }
 
-fn find_git_repositories(dir: std::path::PathBuf) -> Result<(), Error> {
+fn find_git_repositories(dir: std::path::PathBuf) -> Result<(), Box<dyn Error>> {
     if !dir.is_dir() {
         return Ok(());
     }
-    if is_git_dir(&dir.join(".git")) {
-        println!("{}", dir.display());
-    }
-    if is_git_dir(&dir) && !is_named_git(&dir) {
+    if is_git_dir(&dir.join(".git")) || (is_git_dir(&dir) && !is_named_git(&dir)) {
         println!("{}", dir.display());
     }
 
-    let entries = fs::read_dir(&dir)?;
-    for entry in entries {
+    for entry in fs::read_dir(&dir)? {
         let path = entry?.path();
         if path.is_dir() {
             _ = find_git_repositories(path);
@@ -55,5 +51,10 @@ fn is_git_dir(path: &std::path::PathBuf) -> bool {
 }
 
 fn is_named_git(path: &std::path::PathBuf) -> bool {
-    path.file_name().unwrap().to_str().unwrap() == ".git"
+    if let Some(p) = path.file_name() {
+        if let Some(ps) = p.to_str() {
+            return ps == ".git";
+        }
+    }
+    false
 }
