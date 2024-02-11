@@ -40,14 +40,13 @@ fn find_git_repositories(dir: std::path::PathBuf) -> Result<(), Box<dyn Error>> 
 fn is_git_dir(path: &std::path::PathBuf) -> bool {
     let git_files = ["HEAD", "config", "description", "hooks", "objects", "refs"];
 
-    for file in git_files.iter() {
-        let git_path = path.join(file);
-        if !git_path.exists() {
-            return false;
-        }
-    }
-
-    true
+    git_files
+        .iter()
+        .filter(|file| path.join(file).exists())
+        .copied()
+        .collect::<Vec<&str>>()
+        .len()
+        == 6
 }
 
 fn is_named_git(path: &std::path::PathBuf) -> bool {
