@@ -8,21 +8,31 @@ use std::env::current_dir;
 use std::error::Error;
 use std::fs;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
 
     let base_dir = if args.len() > 0 {
         std::path::PathBuf::from(&args[0])
     } else {
-        current_dir()?
+        if let Ok(cd) = current_dir() {
+            cd
+        } else {
+            std::path::PathBuf::from("/")
+        }
     };
 
     if !base_dir.is_dir() {
-        eprintln!("{} is not a directory", base_dir.to_str().unwrap());
-        return Ok(());
+        eprintln!(
+            "{} is not a directory",
+            if let Some(e) = base_dir.to_str() {
+                e
+            } else {
+                ""
+            }
+        );
+        return;
     }
     _ = find_git_repositories(base_dir);
-    Ok(())
 }
 
 /// Recursive function that prints the current directories path if it is a git repo
