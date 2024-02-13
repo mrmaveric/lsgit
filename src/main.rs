@@ -38,10 +38,6 @@ fn main() {
 /// Recursive function that prints the current directories path if it is a git repo
 /// then calls it's self on all sub-directories.
 fn find_git_repositories(dir: std::path::PathBuf) -> Result<(), Box<dyn Error>> {
-    if !dir.is_dir() {
-        return Ok(());
-    }
-
     if (is_git_dir(&dir) || is_git_dir(&dir.join(".git"))) && !is_named_git(&dir) {
         println!("{}", dir.display());
     }
