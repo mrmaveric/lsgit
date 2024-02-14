@@ -16,6 +16,7 @@ fn main() {
         .collect::<Vec<String>>()
         .contains(&String::from("-d"));
     let args: Vec<String> = env::args()
+        .skip(1)
         .filter(|arg| arg != &String::from("-d"))
         .collect();
 

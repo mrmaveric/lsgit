@@ -1,6 +1,6 @@
 [package]
 name = "lsgit"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 description = "lsgit recursivly lists git projects below start directory. Start directly is CWD by default, but an alternate directory can be passed as a command line arguement"
 keywords = ["lsgit", "git", "ls"]
