@@ -3,13 +3,21 @@
 //!
 //! If called with a valid path as it's first command line arguement, it will start it's search
 //! in the path provided.
+use std::collections::VecDeque;
 use std::env;
 use std::env::current_dir;
 use std::error::Error;
 use std::fs;
+use std::path::PathBuf;
 
 fn main() {
-    let args: Vec<String> = env::args().skip(1).collect();
+    let depth_first = env::args()
+        .skip(1)
+        .collect::<Vec<String>>()
+        .contains(&String::from("-d"));
+    let args: Vec<String> = env::args()
+        .filter(|arg| arg != &String::from("-d"))
+        .collect();
 
     let base_dir = if args.len() > 0 {
         std::path::PathBuf::from(&args[0])
@@ -32,7 +40,12 @@ fn main() {
         );
         return;
     }
-    _ = find_git_repositories(base_dir);
+
+    if depth_first {
+        _ = find_git_repositories(base_dir);
+    } else {
+        _ = find_git_repositories_breadth_first(base_dir);
+    }
 }
 
 /// Recursive function that prints the current directories path if it is a git repo
@@ -48,6 +61,30 @@ fn find_git_repositories(dir: std::path::PathBuf) -> Result<(), Box<dyn Error>> 
             _ = find_git_repositories(path);
         }
     }
+    Ok(())
+}
+
+/// Function that prints the current directories path if it is a git repo
+/// then calls it's self on all sub-directories.
+fn find_git_repositories_breadth_first(dir: PathBuf) -> Result<(), Box<dyn Error>> {
+    let mut queue = VecDeque::new();
+    queue.push_back(dir);
+
+    while let Some(dir) = queue.pop_front() {
+        if (is_git_dir(&dir) || is_git_dir(&dir.join(".git"))) && !is_named_git(&dir) {
+            println!("{}", dir.display());
+        }
+
+        if let Ok(entries) = fs::read_dir(&dir) {
+            for entry in entries {
+                let path = entry?.path();
+                if path.is_dir() {
+                    queue.push_back(path);
+                }
+            }
+        }
+    }
+
     Ok(())
 }
 
