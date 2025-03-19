@@ -119,16 +119,33 @@ func worker(wg *sync.WaitGroup, mu *sync.Mutex, activePaths *int, paths <-chan P
 		}
 
 		isGitRepo := false
-		for _, folder := range subfolders {
-			// If the folder is a .git directory or a HEAD file, mark the path as a Git repository
-			if folder.IsDir() && folder.Name() == ".git" {
-				isGitRepo = true
+		// Define the files that must exist together to identify a Git repository
+		requiredFiles := []string{"config", "HEAD"}
+
+		// Check if all required files exist in the current folder
+		allFilesExist := true
+		for _, file := range requiredFiles {
+			if _, err := os.Stat(filepath.Join(path, file)); os.IsNotExist(err) {
+				allFilesExist = false
 				break
 			}
-			if !folder.IsDir() && folder.Name() == "HEAD" {
-				isGitRepo = true
-				break
+		}
+
+		// If not all files exist in the current folder, check the .git subfolder
+		if !allFilesExist {
+			allFilesExist = true
+			gitPath := filepath.Join(path, ".git")
+			for _, file := range requiredFiles {
+				if _, err := os.Stat(filepath.Join(gitPath, file)); os.IsNotExist(err) {
+					allFilesExist = false
+					break
+				}
 			}
+		}
+
+		// Mark the path as a Git repository if all required files exist in one location
+		if allFilesExist {
+			isGitRepo = true
 		}
 
 		if isGitRepo {
