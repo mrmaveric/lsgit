@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: windows-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 'stable'
+          cache: true
+      
+      - name: Install Scoop
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+          iwr -useb get.scoop.sh -outfile 'install.ps1'
+          .\install.ps1 -RunAsAdmin
+          Write-Output "$env:USERPROFILE\scoop\shims" | Out-File -FilePath $env:GITHUB_PATH -Append
+          Remove-Item -Path install.ps1 -Force
+      
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          scoop bucket add extras
+          scoop install inno-setup
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: v2.8.1
+          args: release --clean
+          
+      - name: Build Windows Installer
+        shell: pwsh
+        run: |
+          Write-Output "Building Windows Installer..."
+          $InnoSetupCompiler = (Get-Command iscc).Source
+          if (-not $InnoSetupCompiler) {
+              throw "Inno Setup Compiler (iscc) not found"
+          }
+          & $InnoSetupCompiler setup.iss
+          if (-not $?) {
+              throw "Inno Setup compilation failed"
+          }
+
+      - name: Upload Installer to Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            Output/lsgit-setup.exe
